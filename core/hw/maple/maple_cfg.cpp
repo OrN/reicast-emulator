@@ -87,7 +87,7 @@ int numberOfControl = cfgLoadInt("players", "nb", 1);
 	}
 
 	mcfg_Create(MDT_SegaVMU,0,0);
-	mcfg_Create(MDT_PurupuruPack,0,1);
+	mcfg_Create(MDT_SegaVMU,0,1);
 #else
 	mcfg_Create(MDT_NaomiJamma, 0, 5);
 #endif
