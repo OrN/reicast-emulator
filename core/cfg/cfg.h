@@ -12,6 +12,8 @@
 bool cfgOpen();
 s32   cfgLoadInt(const wchar * lpSection, const wchar * lpKey,s32 Default);
 void  cfgSaveInt(const wchar * lpSection, const wchar * lpKey, s32 Int);
+float   cfgLoadFloat(const wchar * lpSection, const wchar * lpKey,float Default);
+void  cfgSaveFloat(const wchar * lpSection, const wchar * lpKey, float Float);
 void  cfgLoadStr(const wchar * lpSection, const wchar * lpKey, wchar * lpReturn,const wchar* lpDefault);
 string  cfgLoadStr(const wchar * Section, const wchar * Key, const wchar* Default);
 void  cfgSaveStr(const wchar * lpSection, const wchar * lpKey, const wchar * lpString);

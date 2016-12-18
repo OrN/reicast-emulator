@@ -261,7 +261,7 @@ u16 DYNACALL _vmem_ReadMem16_not_mapped(u32 addresss)
 }
 u32 DYNACALL _vmem_ReadMem32_not_mapped(u32 addresss)
 {
-	printf("[sh4]Read32 from 0x%X, not mapped [_vmem default handler]\n",addresss);
+	//printf("[sh4]Read32 from 0x%X, not mapped [_vmem default handler]\n",addresss);
 	return (u32)MEM_ERROR_RETURN_VALUE;
 }
 //default write handers

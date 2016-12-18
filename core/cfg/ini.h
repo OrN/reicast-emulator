@@ -6,6 +6,7 @@ struct ConfigEntry {
 	string value;
 	string get_string();
 	int get_int();
+	float get_float();
 	bool get_bool();
 };
 
@@ -35,9 +36,11 @@ struct ConfigFile {
 		/* getting values */
 		string get(string section_name, string entry_name, string default_value = "");
 		int get_int(string section_name, string entry_name, int default_value = 0);
+		float get_float(string section_name, string entry_name, float default_value = 0.0f);
 		bool get_bool(string section_name, string entry_name, bool default_value = false);
 		/* setting values */
 		void set(string section_name, string entry_name, string value, bool is_virtual = false);
 		void set_int(string section_name, string entry_name, int value, bool is_virtual = false);
+		void set_float(string section_name, string entry_name, float value, bool is_virtual = false);
 		void set_bool(string section_name, string entry_name, bool value, bool is_virtual = false);
 };

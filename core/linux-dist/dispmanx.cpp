@@ -24,8 +24,8 @@ void dispmanx_window_create()
 
 	graphics_get_display_size(0 /* LCD */, &screen_width, &screen_height);
 
-	window_width = settings.dispmanx.Width;
-	window_height = settings.dispmanx.Height;
+	window_width = settings.dispmanx.Width * settings.dispmanx.Scale;
+	window_height = settings.dispmanx.Height * settings.dispmanx.Scale;
 
 	if(window_width < 1)
 		window_width = screen_width;

@@ -265,7 +265,7 @@ static u32 omx_push(void* frame, u32 samples, bool wait)
 		}
 		else if(latency == 0)
 		{
-			fprintf(stderr, "OMX: underrun occurred\n");
+			//fprintf(stderr, "OMX: underrun occurred\n");
 		}
 
 		memcpy(audio_buffers[audio_buffer_idx]->pBuffer + buffer_length, frame, copy_size);

@@ -665,6 +665,7 @@ struct settings_t
 	{
 		u32 Width;
 		u32 Height;
+		float Scale;
 		bool Maintain_Aspect;
 	} dispmanx;
 #endif

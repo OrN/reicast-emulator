@@ -266,6 +266,7 @@ void LoadSettings()
 #if SUPPORT_DISPMANX
 	settings.dispmanx.Width = cfgLoadInt("dispmanx","width",640);
 	settings.dispmanx.Height = cfgLoadInt("dispmanx","height",480);
+	settings.dispmanx.Scale = cfgLoadFloat("dispmanx","frame_scale",1.0f);
 	settings.dispmanx.Maintain_Aspect = cfgLoadBool("dispmanx","maintain_aspect",true);
 #endif
 
