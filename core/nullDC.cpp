@@ -270,6 +270,11 @@ void LoadSettings()
 	settings.dispmanx.Maintain_Aspect = cfgLoadBool("dispmanx","maintain_aspect",true);
 #endif
 
+	settings.hacks.No_OIT = cfgLoadBool("hacks","no_oit",false);
+	settings.hacks.Alt_Sort = cfgLoadBool("hacks","alternate_sort",false);
+	settings.hacks.Draw_ModVol = cfgLoadBool("hacks","draw_modvol",false);
+	settings.hacks.Use_Framebuffer = cfgLoadBool("hacks","use_framebuffer",false);
+
 #if (HOST_OS != OS_LINUX || defined(_ANDROID) || defined(TARGET_PANDORA))
 	settings.aica.BufferSize=2048;
 #else

@@ -672,6 +672,14 @@ struct settings_t
 
 	struct
 	{
+		bool No_OIT;
+		bool Alt_Sort;
+		bool Draw_ModVol;
+		bool Use_Framebuffer;
+	} hacks;
+
+	struct
+	{
 		bool PatchRegion;
 		bool LoadDefaultImage;
 		char DefaultImage[512];

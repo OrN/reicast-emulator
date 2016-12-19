@@ -1107,7 +1107,8 @@ void DrawStrips()
 	/*if (!GetAsyncKeyState(VK_F1))*/
 	DrawList<ListType_Opaque,false>(pvrrc.global_param_op);
 
-	//DrawModVols();
+	if(settings.hacks.Draw_ModVol)
+		DrawModVols();
 
 	//Alpha tested
 	//setup alpha test state
@@ -1119,22 +1120,27 @@ void DrawStrips()
 	//Setup blending
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	/*if (!GetAsyncKeyState(VK_F3))*/
 	{
-		/*
-		if (UsingAutoSort())
-			SortRendPolyParamList(pvrrc.global_param_tr);
+
+		if(settings.hacks.No_OIT)
+		{
+			DrawList<ListType_Translucent,true>(pvrrc.global_param_tr);
+		}
 		else
-			*/
-#if TRIG_SORT
-		if (pvrrc.isAutoSort)
-			DrawSorted();
-		else
-			DrawList<ListType_Translucent,false>(pvrrc.global_param_tr);
-#else
-		if (pvrrc.isAutoSort)
-			SortPParams();
-		DrawList<ListType_Translucent,true>(pvrrc.global_param_tr);
-#endif
+		{
+			if(settings.hacks.Alt_Sort)
+			{
+				if (pvrrc.isAutoSort)
+					SortPParams();
+				DrawList<ListType_Translucent,true>(pvrrc.global_param_tr);
+			}
+			else
+			{
+				if (pvrrc.isAutoSort)
+					DrawSorted();
+				else
+					DrawList<ListType_Translucent,false>(pvrrc.global_param_tr);
+			}
+		}
 	}
 }

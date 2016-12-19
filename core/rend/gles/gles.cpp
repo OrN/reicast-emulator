@@ -371,7 +371,7 @@ const char* rb_vertex =
 "void main()\n"
 "{\n"
 "  v_tex = a_data.zw;\n"
-"  gl_Position = vec4(a_data.x, a_data.y, 0.0, 1.0);\n"
+"  gl_Position = vec4(a_data.x, a_data.y, 1.0, 1.0);\n"
 "}\n"
 ;
 
@@ -415,8 +415,16 @@ GLuint gl_CompileAndLink(const char* VertexShader, const char* FragmentShader);
 
 		printf("Info: EGL version %d.%d\n",maj,min);
 
-		EGLint pi32ConfigAttribs[]  = { EGL_SURFACE_TYPE, EGL_WINDOW_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT , EGL_DEPTH_SIZE, 0, EGL_STENCIL_SIZE, 0, EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 8, EGL_NONE };
+		EGLint* pi32ConfigAttribs;
+		static EGLint pi32Config_fb[] = { EGL_SURFACE_TYPE, EGL_WINDOW_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT , EGL_DEPTH_SIZE, 0, EGL_STENCIL_SIZE, 0, EGL_RED_SIZE, 5, EGL_GREEN_SIZE, 6, EGL_BLUE_SIZE, 5, EGL_ALPHA_SIZE, 0, EGL_NONE };
+		static EGLint pi32Config[] = { EGL_SURFACE_TYPE, EGL_WINDOW_BIT, EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT , EGL_DEPTH_SIZE, 24, EGL_STENCIL_SIZE, 8, EGL_RED_SIZE, 5, EGL_GREEN_SIZE, 6, EGL_BLUE_SIZE, 5, EGL_ALPHA_SIZE, 0, EGL_NONE };
+
 		EGLint pi32ContextAttribs[] = { EGL_CONTEXT_CLIENT_VERSION, 2 , EGL_NONE };
+
+		if(settings.hacks.Use_Framebuffer)
+			pi32ConfigAttribs = pi32Config_fb;
+		else
+			pi32ConfigAttribs = pi32Config;
 
 		int num_config;
 
@@ -462,51 +470,6 @@ GLuint gl_CompileAndLink(const char* VertexShader, const char* FragmentShader);
 		printf("Info: GL version %s\n",gl_version);
 		printf("Info: GL extensions %s\n",gl_extensions);
 
-		// Depth render buffer
-		glGenRenderbuffers(1, &depth_rb);
-		glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, w, h);
-
-		// Stencil render buffer
-		glGenRenderbuffers(1, &stencil_rb);
-		glBindRenderbuffer(GL_RENDERBUFFER, stencil_rb);
-		glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, w, h);
-
-		// Generate render texture target
-		glGenTextures(1, &rb_tex);
-		glBindTexture(GL_TEXTURE_2D, rb_tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-		// Generate framebuffer
-		glGenFramebuffers(1, &rb_fb);
-		glBindFramebuffer(GL_FRAMEBUFFER, rb_fb);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rb_tex, 0);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
-		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencil_rb);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		// Compile shader
-		rb_program = gl_CompileAndLink(rb_vertex, rb_fragment);
-		rb_program_data = glGetAttribLocation(rb_program, "a_data");
-		rb_program_tex0 = glGetUniformLocation(rb_program, "u_tex0");
-		glEnableVertexAttribArray(rb_program_data);
-
-		// Generate vertex array for blit
-		static const GLfloat vertex_data[] =
-		{
-			-1.0, -1.0,	0.0, 0.0,
-			 1.0, -1.0,	1.0, 0.0,
-			 1.0,  1.0,	1.0, 1.0,
-			-1.0,  1.0,	0.0, 1.0
-		};
-		glGenBuffers(1, &rb_buffer);
-		glBindBuffer(GL_ARRAY_BUFFER, rb_buffer);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
-
 		printf("EGL config: %08X, %08X, %08X %dx%d\n",gl.setup.context,gl.setup.display,gl.setup.surface,w,h);
 		return true;
 	}
@@ -529,19 +492,20 @@ GLuint gl_CompileAndLink(const char* VertexShader, const char* FragmentShader);
 		}
 		#endif
 
-		// blit
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_STENCIL_TEST);
+		if(settings.hacks.Use_Framebuffer)
+		{
+			// blit to main framebuffer
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glBindBuffer(GL_ARRAY_BUFFER, rb_buffer);
-		glUseProgram(rb_program);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, rb_tex);
-		glUniform1i(rb_program_tex0, 0);
-		glVertexAttribPointer(rb_program_data, 4, GL_FLOAT, 0, 16, 0);
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glUseProgram(rb_program);
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, rb_tex);
+			glUniform1i(rb_program_tex0, 0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, rb_buffer);
+			glVertexAttribPointer(rb_program_data, 4, GL_FLOAT, GL_FALSE, 16, 0);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		}
 
 		eglSwapBuffers(gl.setup.display, gl.setup.surface);
 	}
@@ -962,6 +926,58 @@ bool gl_create_resources()
 	glGenBuffers(1, &gl.vbo.modvols);
 	glGenBuffers(1, &gl.vbo.idxs);
 	glGenBuffers(1, &gl.vbo.idxs2);
+
+	// Create framebuffer
+	if(settings.hacks.Use_Framebuffer)
+	{
+		EGLint w, h;
+		w = screen_width;
+		h = screen_height;
+
+		// Depth render buffer
+		glGenRenderbuffers(1, &depth_rb);
+		glBindRenderbuffer(GL_RENDERBUFFER, depth_rb);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24_OES, w, h);
+
+		// Stencil render buffer
+		glGenRenderbuffers(1, &stencil_rb);
+		glBindRenderbuffer(GL_RENDERBUFFER, stencil_rb);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_STENCIL_INDEX8, w, h);
+
+		// Generate render texture target
+		glGenTextures(1, &rb_tex);
+		glBindTexture(GL_TEXTURE_2D, rb_tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_SHORT_5_6_5, 0);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		// Generate framebuffer
+		glGenFramebuffers(1, &rb_fb);
+		glBindFramebuffer(GL_FRAMEBUFFER, rb_fb);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, rb_tex, 0);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_rb);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, stencil_rb);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		// Compile shader
+		rb_program = gl_CompileAndLink(rb_vertex, rb_fragment);
+		rb_program_data = glGetAttribLocation(rb_program, "a_data");
+		rb_program_tex0 = glGetUniformLocation(rb_program, "u_tex0");
+
+		// Generate vertex array for blit
+		static const GLfloat vertex_data[] =
+		{
+			-1.0, -1.0,	0.0, 0.0,
+			 1.0, -1.0,	1.0, 0.0,
+			 1.0,  1.0,	1.0, 1.0,
+			-1.0,  1.0,	0.0, 1.0
+		};
+		glGenBuffers(1, &rb_buffer);
+		glBindBuffer(GL_ARRAY_BUFFER, rb_buffer);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+	}
 
 	memset(gl.pogram_table,0,sizeof(gl.pogram_table));
 
@@ -1835,7 +1851,10 @@ bool RenderFrame()
 	}
 	else
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, rb_fb);
+		if(settings.hacks.Use_Framebuffer)
+			glBindFramebuffer(GL_FRAMEBUFFER, rb_fb);
+		else
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	}
 
 	//Clear depth
@@ -1848,7 +1867,6 @@ bool RenderFrame()
 	glClearDepthf(0.f); glCheck();
 	glDepthRangef(0.f, 1.f);
 	glClear(GL_COLOR_BUFFER_BIT|GL_STENCIL_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); glCheck();
-
 
 	if (UsingAutoSort())
 		GenSorted();
