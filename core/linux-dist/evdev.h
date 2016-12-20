@@ -49,6 +49,7 @@ struct EvdevAxisData
 struct EvdevController
 {
 	int fd;
+	char device[256];
 	EvdevControllerMapping* mapping;
 	EvdevAxisData data_x;
 	EvdevAxisData data_y;

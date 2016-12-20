@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <dlfcn.h>
+#include <errno.h>
 
 #if defined(USE_EVDEV)
 	bool libevdev_tried = false;
@@ -286,6 +287,7 @@
 					}
 				}
 				controller->mapping = &loaded_mappings.find(string(mapping_fname))->second;
+				strcpy(controller->device, device);
 				printf("evdev: Using '%s' mapping\n", controller->mapping->name);
 				controller->init();
 
@@ -302,12 +304,32 @@
 	bool input_evdev_handle(EvdevController* controller, u32 port)
 	{
 		#define SET_FLAG(field, mask, expr) field =((expr) ? (field & ~mask) : (field | mask))
-		if (controller->fd < 0 || controller->mapping == NULL)
+		if (controller->mapping == NULL)
 		{
 			return false;
 		}
 
 		input_event ie;
+
+		if(read(controller->fd, nullptr, 0) == -1 && errno == 19)
+		{
+			printf("evdev: Device at '%s' lost connection\n", controller->device);
+			controller->fd = -1;
+		}
+
+		if(controller->fd < 0)
+		{
+			controller->fd = open(controller->device, O_RDWR);
+			if(controller->fd >= 0)
+			{
+				fcntl(controller->fd, F_SETFL, O_NONBLOCK);
+				printf("evdev: Reconnected device at '%s'\n", controller->device);
+			}
+			else
+			{
+				return false;
+			}
+		}
 
 		while(read(controller->fd, &ie, sizeof(ie)) == sizeof(ie))
 		{
